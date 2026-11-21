@@ -3,7 +3,7 @@
   "info": {
     "title": "Test Case Management API",
     "version": "1.0.0",
-    "description": "Public API surface exposed through the gateway. All routes except /api/auth/* require a Bearer JWT."
+    "description": "Public API surface exposed through the nginx gateway. All routes except /api/auth/* require a Bearer JWT."
   },
   "servers": [{ "url": "/api" }],
   "components": {

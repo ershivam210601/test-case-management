@@ -1,12 +1,20 @@
-FROM node:20-alpine
+FROM nginx:1.27-alpine
 
-WORKDIR /app
+# remove the original default configuration file
+RUN rm -rf /etc/nginx/conf.d/default.conf
 
-COPY package*.json ./
-RUN npm install
+# copy the root nginx conf file
+COPY ./nginx.conf /etc/nginx/conf.d/nginx.conf
 
-COPY . .
+# copy the backends file
+COPY ./servers.conf /etc/nginx/servers.conf
 
-EXPOSE 4000
+# copy the API route definitions
+COPY ./api_conf.d /etc/nginx/api_conf.d
 
-CMD ["node", "src/index.js"]
+# copy the JSON error responses
+COPY ./json_errors.conf /etc/nginx/json_errors.conf
+
+COPY ./html /usr/share/nginx/html
+
+EXPOSE 80

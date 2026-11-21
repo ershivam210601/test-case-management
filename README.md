@@ -5,14 +5,14 @@ A full-stack test case management application built as a service-oriented archit
 ## Architecture
 
 ```
-React (Vite)  ──HTTPS──>  Gateway (4000, public)
+React (Vite)  ──HTTPS──>  Nginx Gateway (4000, public)
                              ├── /api/auth/*  ──>  Auth Service (4002)      ──HTTP──> DB Service (4001) ──> PostgreSQL
                              └── /api/*       ──>  User Service (4003)      ──HTTP──> DB Service (4001) ──> PostgreSQL
                                                          │
                                                          └──> Redis (caching)
 ```
 
-- **gateway**: single public entry point. Routes `/api/auth/*` to auth-service and everything else under `/api/*` to user-service. Handles CORS and security headers, serves Swagger docs at `/api-docs`.
+- **gateway**: Nginx reverse proxy, the single public entry point. `servers.conf` declares the `auth-service-cluster`/`user-service-cluster` upstreams, `api_conf.d/api.conf` routes `/api/auth/*` to auth-service and everything else under `/api/*` to user-service, adds CORS/security headers, and handles OPTIONS preflight. Serves static Swagger UI at `/api-docs` (spec at `/openapi.json`) and JSON error pages via `json_errors.conf`.
 - **auth-service**: registration, login, JWT issuing. Rate-limited to 5 requests/15min. Never touches Postgres directly — calls db-service.
 - **user-service**: all business domain logic (projects, test cases, test suites, test executions, analytics). Enforces RBAC via JWT claims, owns Redis caching and cache invalidation. Never touches Postgres directly — calls db-service.
 - **db-service**: the **only** service with a Postgres connection (Prisma). Exposes an internal-only REST API, protected by a shared `INTERNAL_API_KEY` header, called exclusively by auth-service and user-service.
@@ -106,7 +106,7 @@ Each of the four backend folders (`services/gateway`, `services/auth-service`, `
 1. Create a Railway project, add a Postgres and a Redis plugin.
 2. Deploy `services/db-service` first; set `DATABASE_URL` (from the Postgres plugin) and a strong `INTERNAL_API_KEY`. Run `npx prisma migrate deploy && node prisma/seed.js` once via Railway's shell.
 3. Deploy `services/auth-service` and `services/user-service`; set `DB_SERVICE_URL` to db-service's private URL, the same `INTERNAL_API_KEY`, the same `JWT_SECRET`, and (for user-service) `REDIS_URL` from the Redis plugin.
-4. Deploy `services/gateway`; set `AUTH_SERVICE_URL` / `USER_SERVICE_URL` to their private URLs and `CORS_ORIGIN` to the deployed frontend's URL. Generate a public domain for this service only.
+4. Deploy `services/gateway`. Before building, edit `services/gateway/servers.conf` to point at the deployed auth-service/user-service private hostnames, and replace the hardcoded `http://localhost:5173` origin in `services/gateway/api_conf.d/api.conf` with the deployed frontend's URL. Generate a public domain for this service only.
 5. Deploy `frontend` to Vercel; set `VITE_API_URL` to the gateway's public URL + `/api`.
 
 ## Project structure

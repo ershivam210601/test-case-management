@@ -77,13 +77,8 @@ services:
     depends_on:
       - auth-service
       - user-service
-    environment:
-      PORT: 4000
-      AUTH_SERVICE_URL: http://auth-service:4002
-      USER_SERVICE_URL: http://user-service:4003
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     ports:
-      - '4000:4000'
+      - '4000:80'
 
 volumes:
   pgdata:
