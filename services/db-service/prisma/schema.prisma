@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  test_lead
+  tester
+  read_only
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+  Critical
+}
+
+enum TestType {
+  Functional
+  Integration
+  Regression
+  Smoke
+  UI
+  API
+}
+
+enum ExecutionStatus {
+  Pass
+  Fail
+  Blocked
+  Skipped
+}
+
+enum ProjectStatus {
+  Active
+  Archived
+  OnHold
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(tester)
+  createdAt    DateTime @default(now())
+
+  projectMembers   ProjectMember[]
+  createdProjects  Project[]        @relation("ProjectCreator")
+  createdTestCases TestCase[]       @relation("TestCaseCreator")
+  executions       TestExecution[]  @relation("ExecutedBy")
+
+  @@index([role])
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  version     String?
+  status      ProjectStatus @default(Active)
+  createdById String
+  createdBy   User          @relation("ProjectCreator", fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+
+  members    ProjectMember[]
+  testCases  TestCase[]
+  testSuites TestSuite[]
+
+  @@index([createdById])
+}
+
+model ProjectMember {
+  projectId String
+  userId    String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
+
+model TestCase {
+  id             String     @id @default(uuid())
+  projectId      String
+  project        Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  priority       Priority   @default(Medium)
+  type           TestType   @default(Functional)
+  preconditions  String?
+  postconditions String?
+  tags           String[]   @default([])
+  createdById    String
+  createdBy      User       @relation("TestCaseCreator", fields: [createdById], references: [id])
+  createdAt      DateTime   @default(now())
+
+  steps      TestStep[]
+  suiteLinks SuiteCase[]
+  executions TestExecution[]
+
+  @@index([projectId])
+  @@index([priority])
+  @@index([type])
+}
+
+model TestStep {
+  id             String   @id @default(uuid())
+  testCaseId     String
+  testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  stepNo         Int
+  action         String
+  expectedResult String
+
+  @@index([testCaseId])
+}
+
+model TestSuite {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  cases      SuiteCase[]
+  executions TestExecution[]
+
+  @@index([projectId])
+}
+
+model SuiteCase {
+  suiteId    String
+  testCaseId String
+  suite      TestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  testCase   TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@id([suiteId, testCaseId])
+  @@index([testCaseId])
+}
+
+model TestExecution {
+  id          String          @id @default(uuid())
+  testCaseId  String
+  testCase    TestCase        @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  suiteId     String?
+  suite       TestSuite?      @relation(fields: [suiteId], references: [id])
+  status      ExecutionStatus
+  comment     String?
+  executedById String
+  executedBy  User            @relation("ExecutedBy", fields: [executedById], references: [id])
+  executedAt  DateTime        @default(now())
+
+  @@index([testCaseId])
+  @@index([suiteId])
+  @@index([status])
+  @@index([executedById])
+}

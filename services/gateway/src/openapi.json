@@ -1,0 +1,71 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Test Case Management API",
+    "version": "1.0.0",
+    "description": "Public API surface exposed through the gateway. All routes except /api/auth/* require a Bearer JWT."
+  },
+  "servers": [{ "url": "/api" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    }
+  },
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user (role defaults to tester)",
+        "security": [],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "email": {"type": "string"}, "password": {"type": "string"}, "name": {"type": "string"} }, "required": ["email", "password", "name"] } } } },
+        "responses": { "201": { "description": "User created, returns token + user" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login and receive a JWT",
+        "security": [],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "email": {"type": "string"}, "password": {"type": "string"} }, "required": ["email", "password"] } } } },
+        "responses": { "200": { "description": "Returns token + user" }, "401": { "description": "Invalid credentials" } }
+      }
+    },
+    "/users": {
+      "get": { "summary": "List all users (admin only)", "responses": { "200": { "description": "OK" }, "403": { "description": "Forbidden" } } }
+    },
+    "/users/{id}": {
+      "patch": { "summary": "Update a user's name/role (admin only)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": { "200": { "description": "OK" } } },
+      "delete": { "summary": "Delete a user (admin only)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": { "204": { "description": "Deleted" } } }
+    },
+    "/projects": {
+      "get": { "summary": "List projects (all roles)", "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Create a project (admin, test_lead only)", "responses": { "201": { "description": "Created" }, "403": { "description": "Forbidden" } } }
+    },
+    "/test-cases": {
+      "get": { "summary": "List/filter/paginate test cases (all roles)", "parameters": [
+        {"name": "projectId", "in": "query", "schema": {"type": "string"}},
+        {"name": "priority", "in": "query", "schema": {"type": "string"}},
+        {"name": "type", "in": "query", "schema": {"type": "string"}},
+        {"name": "search", "in": "query", "schema": {"type": "string"}},
+        {"name": "page", "in": "query", "schema": {"type": "integer"}},
+        {"name": "pageSize", "in": "query", "schema": {"type": "integer"}}
+      ], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Create a test case (admin, test_lead only)", "responses": { "201": { "description": "Created" }, "403": { "description": "Forbidden" } } }
+    },
+    "/test-cases/{id}": {
+      "get": { "summary": "Get a test case (all roles)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": { "200": { "description": "OK" } } },
+      "patch": { "summary": "Update a test case (admin, test_lead only)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": { "200": { "description": "OK" } } },
+      "delete": { "summary": "Delete a test case (admin, test_lead only)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": { "204": { "description": "Deleted" } } }
+    },
+    "/test-suites": {
+      "get": { "summary": "List test suites for a project (all roles, cached 30 min)", "parameters": [{"name": "projectId", "in": "query", "schema": {"type": "string"}}], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Create a test suite (admin, test_lead only)", "responses": { "201": { "description": "Created" } } }
+    },
+    "/test-executions": {
+      "get": { "summary": "List test executions (all roles)", "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Record a test execution result (admin, test_lead, tester only)", "responses": { "201": { "description": "Created" }, "403": { "description": "Forbidden" } } }
+    },
+    "/analytics/{projectId}": {
+      "get": { "summary": "Get dashboard analytics for a project (all roles, cached 15 min)", "parameters": [{"name": "projectId", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": { "200": { "description": "OK" } } }
+    }
+  }
+}

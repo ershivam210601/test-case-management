@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testcase_mgmt
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-service:
+    build: ./services/db-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/testcase_mgmt
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+    ports:
+      - '4001:4001'
+
+  auth-service:
+    build: ./services/auth-service
+    restart: unless-stopped
+    depends_on:
+      - db-service
+    environment:
+      PORT: 4002
+      DB_SERVICE_URL: http://db-service:4001
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+      JWT_EXPIRES_IN: 8h
+    ports:
+      - '4002:4002'
+
+  user-service:
+    build: ./services/user-service
+    restart: unless-stopped
+    depends_on:
+      - db-service
+      - redis
+    environment:
+      PORT: 4003
+      DB_SERVICE_URL: http://db-service:4001
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - '4003:4003'
+
+  gateway:
+    build: ./services/gateway
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - user-service
+    environment:
+      PORT: 4000
+      AUTH_SERVICE_URL: http://auth-service:4002
+      USER_SERVICE_URL: http://user-service:4003
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    ports:
+      - '4000:4000'
+
+volumes:
+  pgdata:
