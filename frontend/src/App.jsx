@@ -4,24 +4,30 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import TopBar from './components/TopBar';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const TestCasesPage = lazy(() => import('./pages/TestCasesPage'));
 const TestCaseFormPage = lazy(() => import('./pages/TestCaseFormPage'));
-const TestCaseDetailPage = lazy(() => import('./pages/TestCaseDetailPage'));
 const TestSuitesPage = lazy(() => import('./pages/TestSuitesPage'));
 const TestSuiteDetailPage = lazy(() => import('./pages/TestSuiteDetailPage'));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
-const UsersPage = lazy(() => import('./pages/UsersPage'));
+const DefectsPage = lazy(() => import('./pages/DefectsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function Layout({ children }) {
   return (
     <ProjectProvider>
-      <Navbar />
-      <main className="main-content">{children}</main>
+      <div className="app-shell">
+        <Sidebar />
+        <div className="app-body">
+          <TopBar />
+          <main className="main-content">{children}</main>
+        </div>
+      </div>
     </ProjectProvider>
   );
 }
@@ -39,11 +45,12 @@ export default function App() {
               <Route path="/test-cases" element={<ProtectedRoute><Layout><TestCasesPage /></Layout></ProtectedRoute>} />
               <Route path="/test-cases/new" element={<ProtectedRoute roles={['admin', 'test_lead']}><Layout><TestCaseFormPage /></Layout></ProtectedRoute>} />
               <Route path="/test-cases/:id/edit" element={<ProtectedRoute roles={['admin', 'test_lead']}><Layout><TestCaseFormPage /></Layout></ProtectedRoute>} />
-              <Route path="/test-cases/:id" element={<ProtectedRoute><Layout><TestCaseDetailPage /></Layout></ProtectedRoute>} />
               <Route path="/test-suites" element={<ProtectedRoute><Layout><TestSuitesPage /></Layout></ProtectedRoute>} />
               <Route path="/test-suites/:id" element={<ProtectedRoute><Layout><TestSuiteDetailPage /></Layout></ProtectedRoute>} />
+              <Route path="/defects" element={<ProtectedRoute><Layout><DefectsPage /></Layout></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute roles={['admin', 'test_lead']}><Layout><ProjectsPage /></Layout></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute roles={['admin']}><Layout><UsersPage /></Layout></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
               <Route path="*" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
             </Routes>
           </Suspense>

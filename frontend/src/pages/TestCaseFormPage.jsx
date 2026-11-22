@@ -19,8 +19,11 @@ export default function TestCaseFormPage() {
   const [preconditions, setPreconditions] = useState('');
   const [postconditions, setPostconditions] = useState('');
   const [tags, setTags] = useState('');
+  const [assignedToId, setAssignedToId] = useState('');
   const [steps, setSteps] = useState([{ action: '', expectedResult: '' }]);
   const [error, setError] = useState('');
+
+  const members = currentProject?.members?.map((m) => m.user) || [];
 
   useEffect(() => {
     if (!isEdit) return;
@@ -32,6 +35,7 @@ export default function TestCaseFormPage() {
       setPreconditions(data.preconditions || '');
       setPostconditions(data.postconditions || '');
       setTags((data.tags || []).join(', '));
+      setAssignedToId(data.assignedToId || '');
       setSteps(data.steps?.length ? data.steps.map((s) => ({ action: s.action, expectedResult: s.expectedResult })) : [{ action: '', expectedResult: '' }]);
     });
   }, [id, isEdit]);
@@ -50,6 +54,7 @@ export default function TestCaseFormPage() {
       projectId: currentProject.id,
       title, description, priority, type, preconditions, postconditions,
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+      assignedToId: assignedToId || null,
       steps: steps.filter((s) => s.action.trim()),
     };
     try {
@@ -85,6 +90,12 @@ export default function TestCaseFormPage() {
         <label>Pre-conditions<textarea value={preconditions} onChange={(e) => setPreconditions(e.target.value)} /></label>
         <label>Post-conditions<textarea value={postconditions} onChange={(e) => setPostconditions(e.target.value)} /></label>
         <label>Tags (comma-separated)<input value={tags} onChange={(e) => setTags(e.target.value)} /></label>
+        <label>Assigned To
+          <select value={assignedToId} onChange={(e) => setAssignedToId(e.target.value)}>
+            <option value="">Unassigned</option>
+            {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+        </label>
 
         <h3>Test Steps</h3>
         {steps.map((s, i) => (

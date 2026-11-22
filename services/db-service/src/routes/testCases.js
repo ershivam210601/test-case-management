@@ -4,12 +4,13 @@ const prisma = require('../prisma');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const { projectId, priority, type, search, tag, page = '1', pageSize = '20' } = req.query;
+  const { projectId, priority, type, search, tag, assignedToId, page = '1', pageSize = '20' } = req.query;
   const where = {
     ...(projectId && { projectId }),
     ...(priority && { priority }),
     ...(type && { type }),
     ...(tag && { tags: { has: tag } }),
+    ...(assignedToId && { assignedToId }),
     ...(search && {
       OR: [
         { title: { contains: search, mode: 'insensitive' } },
@@ -23,7 +24,10 @@ router.get('/', async (req, res) => {
   const [items, total] = await Promise.all([
     prisma.testCase.findMany({
       where,
-      include: { steps: { orderBy: { stepNo: 'asc' } } },
+      include: {
+        steps: { orderBy: { stepNo: 'asc' } },
+        assignedTo: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: 'desc' },
       skip,
       take,
@@ -37,7 +41,10 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const testCase = await prisma.testCase.findUnique({
     where: { id: req.params.id },
-    include: { steps: { orderBy: { stepNo: 'asc' } } },
+    include: {
+      steps: { orderBy: { stepNo: 'asc' } },
+      assignedTo: { select: { id: true, name: true } },
+    },
   });
   if (!testCase) return res.status(404).json({ error: 'Not found' });
   res.json(testCase);
@@ -46,26 +53,26 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const {
     projectId, title, description, priority, type,
-    preconditions, postconditions, tags, createdById, steps,
+    preconditions, postconditions, tags, createdById, assignedToId, steps,
   } = req.body;
   const testCase = await prisma.testCase.create({
     data: {
       projectId, title, description, priority, type,
-      preconditions, postconditions, tags: tags || [], createdById,
+      preconditions, postconditions, tags: tags || [], createdById, assignedToId: assignedToId || null,
       steps: {
         create: (steps || []).map((s, i) => ({
           stepNo: i + 1, action: s.action, expectedResult: s.expectedResult,
         })),
       },
     },
-    include: { steps: true },
+    include: { steps: true, assignedTo: { select: { id: true, name: true } } },
   });
   res.status(201).json(testCase);
 });
 
 router.patch('/:id', async (req, res) => {
   const {
-    title, description, priority, type, preconditions, postconditions, tags, steps,
+    title, description, priority, type, preconditions, postconditions, tags, assignedToId, steps,
   } = req.body;
 
   if (steps) {
@@ -76,13 +83,14 @@ router.patch('/:id', async (req, res) => {
     where: { id: req.params.id },
     data: {
       title, description, priority, type, preconditions, postconditions, tags,
+      ...(assignedToId !== undefined && { assignedToId: assignedToId || null }),
       ...(steps && {
         steps: {
           create: steps.map((s, i) => ({ stepNo: i + 1, action: s.action, expectedResult: s.expectedResult })),
         },
       }),
     },
-    include: { steps: true },
+    include: { steps: true, assignedTo: { select: { id: true, name: true } } },
   });
   res.json(testCase);
 });
