@@ -1,0 +1,81 @@
+services:
+  - type: web
+    name: tcm-db-service
+    runtime: docker
+    rootDir: services/db-service
+    plan: free
+    envVars:
+      - key: PORT
+        value: 4001
+      - key: DATABASE_URL
+        sync: false
+      - key: INTERNAL_API_KEY
+        generateValue: true
+
+  - type: web
+    name: tcm-auth-service
+    runtime: docker
+    rootDir: services/auth-service
+    plan: free
+    envVars:
+      - key: PORT
+        value: 4002
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: DB_SERVICE_URL
+        fromService:
+          type: web
+          name: tcm-db-service
+          property: hostport
+      - key: INTERNAL_API_KEY
+        fromService:
+          type: web
+          name: tcm-db-service
+          envVarKey: INTERNAL_API_KEY
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: tcm-user-service
+    runtime: docker
+    rootDir: services/user-service
+    plan: free
+    envVars:
+      - key: PORT
+        value: 4003
+      - key: DB_SERVICE_URL
+        fromService:
+          type: web
+          name: tcm-db-service
+          property: hostport
+      - key: INTERNAL_API_KEY
+        fromService:
+          type: web
+          name: tcm-db-service
+          envVarKey: INTERNAL_API_KEY
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: tcm-auth-service
+          envVarKey: JWT_SECRET
+      - key: REDIS_URL
+        sync: false
+
+  - type: web
+    name: tcm-gateway
+    runtime: docker
+    rootDir: services/gateway
+    plan: free
+    envVars:
+      - key: AUTH_SERVICE_HOST
+        fromService:
+          type: web
+          name: tcm-auth-service
+          property: hostport
+      - key: USER_SERVICE_HOST
+        fromService:
+          type: web
+          name: tcm-user-service
+          property: hostport
+      - key: CORS_ORIGIN
+        sync: false
