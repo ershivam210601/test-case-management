@@ -16,7 +16,7 @@ const TestSuitesPage = lazy(() => import('./pages/TestSuitesPage'));
 const TestSuiteDetailPage = lazy(() => import('./pages/TestSuiteDetailPage'));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
 const DefectsPage = lazy(() => import('./pages/DefectsPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const UserManagementPage = lazy(() => import('./pages/UserManagementPage'));
 
 function Layout({ children }) {
   return (
@@ -50,7 +50,7 @@ export default function App() {
               <Route path="/defects" element={<ProtectedRoute><Layout><DefectsPage /></Layout></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute roles={['admin', 'test_lead']}><Layout><ProjectsPage /></Layout></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
+              <Route path="/user-management" element={<ProtectedRoute roles={['admin']}><Layout><UserManagementPage /></Layout></ProtectedRoute>} />
               <Route path="*" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
             </Routes>
           </Suspense>

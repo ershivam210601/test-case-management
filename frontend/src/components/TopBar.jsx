@@ -59,7 +59,9 @@ export default function TopBar() {
           </button>
           {menuOpen && (
             <div className="profile-dropdown">
-              <button type="button" onClick={() => { setMenuOpen(false); navigate('/settings'); }}>Settings</button>
+              {user.role === 'admin' && (
+                <button type="button" onClick={() => { setMenuOpen(false); navigate('/user-management'); }}>User Management</button>
+              )}
               <button type="button" onClick={() => { logout(); navigate('/login'); }}>Logout</button>
             </div>
           )}

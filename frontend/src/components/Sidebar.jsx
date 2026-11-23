@@ -12,7 +12,7 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const { user } = useAuth();
   const items = user?.role === 'admin'
-    ? [...NAV_ITEMS, { to: '/settings', label: 'User Management', icon: Users }]
+    ? [...NAV_ITEMS, { to: '/user-management', label: 'User Management', icon: Users }]
     : NAV_ITEMS;
 
   return (

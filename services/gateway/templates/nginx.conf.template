@@ -1,0 +1,86 @@
+upstream auth-service-cluster {
+    server ${AUTH_SERVICE_HOST};
+}
+
+upstream user-service-cluster {
+    server ${USER_SERVICE_HOST};
+}
+
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    client_max_body_size 10M;
+
+    location = /health {
+        default_type application/json;
+        return 200 '{"ok":true,"service":"nginx-gateway"}';
+    }
+
+    location = /openapi.json {
+        default_type application/json;
+    }
+
+    location = /api-docs {
+        return 301 /api-docs/;
+    }
+
+    location /api-docs/ {
+        try_files $uri $uri/ /api-docs/index.html;
+    }
+
+    location /api/auth/ {
+        error_log /var/log/nginx/auth-api-error.log;
+        access_log /var/log/nginx/auth-api-access.log;
+
+        add_header 'Access-Control-Allow-Origin' '${CORS_ORIGIN}' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PATCH, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' '${CORS_ORIGIN}' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PATCH, PUT, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        rewrite ^/api/auth/(.*)$ /auth/$1 break;
+        proxy_pass http://auth-service-cluster;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /api/ {
+        error_log /var/log/nginx/user-api-error.log;
+        access_log /var/log/nginx/user-api-access.log;
+
+        add_header 'Access-Control-Allow-Origin' '${CORS_ORIGIN}' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PATCH, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' '${CORS_ORIGIN}' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PATCH, PUT, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass http://user-service-cluster;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    error_page 400 = @400;
+    error_page 401 = @401;
+    error_page 403 = @403;
+    error_page 404 = @404;
+    include /etc/nginx/json_errors.conf;
+}
