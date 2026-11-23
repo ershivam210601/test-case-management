@@ -1,0 +1,5 @@
+#!/bin/sh
+# Discover the container's actual DNS resolver (Docker's embedded DNS locally,
+# the platform's internal resolver on a cloud host) so nginx can resolve
+# upstream hostnames dynamically per-request instead of once at startup.
+export RESOLVER_IP="$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)"

@@ -6,6 +6,10 @@ RUN rm -rf /etc/nginx/conf.d/default.conf
 # nginx's own entrypoint envsubst's *.template files here into /etc/nginx/conf.d/*.conf at startup
 COPY ./templates /etc/nginx/templates
 
+# sourced before envsubst runs, so it can export RESOLVER_IP for the template above
+COPY ./docker-entrypoint.d/19-resolver.envsh /docker-entrypoint.d/19-resolver.envsh
+RUN chmod +x /docker-entrypoint.d/19-resolver.envsh
+
 # copy the JSON error responses
 COPY ./json_errors.conf /etc/nginx/json_errors.conf
 

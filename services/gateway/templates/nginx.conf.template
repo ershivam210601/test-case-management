@@ -1,10 +1,4 @@
-upstream auth-service-cluster {
-    server ${AUTH_SERVICE_HOST};
-}
-
-upstream user-service-cluster {
-    server ${USER_SERVICE_HOST};
-}
+resolver ${RESOLVER_IP} ipv6=off valid=10s;
 
 server {
     listen 80;
@@ -49,8 +43,9 @@ server {
             return 204;
         }
 
+        set $auth_backend "${AUTH_SERVICE_HOST}";
         rewrite ^/api/auth/(.*)$ /auth/$1 break;
-        proxy_pass http://auth-service-cluster;
+        proxy_pass http://$auth_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -71,8 +66,9 @@ server {
             return 204;
         }
 
+        set $user_backend "${USER_SERVICE_HOST}";
         rewrite ^/api/(.*)$ /$1 break;
-        proxy_pass http://user-service-cluster;
+        proxy_pass http://$user_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
