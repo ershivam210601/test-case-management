@@ -5,6 +5,12 @@ server {
     server_name localhost;
     root /usr/share/nginx/html;
 
+    # AUTH_SERVICE_HOST / USER_SERVICE_HOST include their own scheme
+    # (http://auth-service:4002 locally, https://tcm-auth-service.onrender.com
+    # on Render, where private service-to-service DNS isn't reliable), so
+    # backend TLS needs proper SNI set from the request's Host header below.
+    proxy_ssl_server_name on;
+
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "no-referrer" always;
@@ -42,8 +48,8 @@ server {
 
         set $auth_backend "${AUTH_SERVICE_HOST}";
         rewrite ^/api/auth/(.*)$ /auth/$1 break;
-        proxy_pass http://$auth_backend;
-        proxy_set_header Host $host;
+        proxy_pass $auth_backend;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
@@ -62,8 +68,8 @@ server {
 
         set $user_backend "${USER_SERVICE_HOST}";
         rewrite ^/api/(.*)$ /$1 break;
-        proxy_pass http://$user_backend;
-        proxy_set_header Host $host;
+        proxy_pass $user_backend;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }

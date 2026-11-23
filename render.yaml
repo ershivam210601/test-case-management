@@ -23,10 +23,11 @@ services:
       - key: JWT_EXPIRES_IN
         value: 8h
       - key: DB_SERVICE_URL
-        fromService:
-          type: web
-          name: tcm-db-service
-          property: hostport
+        # Private service-to-service DNS between regular Web Services isn't
+        # reliably resolvable on Render, so point this at tcm-db-service's
+        # public https://...onrender.com URL instead (fill in after that
+        # service's first deploy, once you know its actual URL/suffix).
+        sync: false
       - key: INTERNAL_API_KEY
         fromService:
           type: web
@@ -44,10 +45,7 @@ services:
       - key: PORT
         value: 4003
       - key: DB_SERVICE_URL
-        fromService:
-          type: web
-          name: tcm-db-service
-          property: hostport
+        sync: false # tcm-db-service's public https://...onrender.com URL
       - key: INTERNAL_API_KEY
         fromService:
           type: web
@@ -68,14 +66,8 @@ services:
     plan: free
     envVars:
       - key: AUTH_SERVICE_HOST
-        fromService:
-          type: web
-          name: tcm-auth-service
-          property: hostport
+        sync: false # tcm-auth-service's public https://...onrender.com URL
       - key: USER_SERVICE_HOST
-        fromService:
-          type: web
-          name: tcm-user-service
-          property: hostport
+        sync: false # tcm-user-service's public https://...onrender.com URL
       - key: CORS_ORIGIN
         sync: false

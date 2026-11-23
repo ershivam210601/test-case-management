@@ -15,9 +15,12 @@ COPY ./json_errors.conf /etc/nginx/json_errors.conf
 
 COPY ./html /usr/share/nginx/html
 
-# sane local defaults; override per-environment (see docker-compose.yml / Render env vars)
-ENV AUTH_SERVICE_HOST=auth-service:4002
-ENV USER_SERVICE_HOST=user-service:4003
+# sane local defaults; override per-environment (see docker-compose.yml / Render env vars).
+# Must include a scheme (http/https) - on Render these point at the other
+# services' public *.onrender.com URLs, since private service-to-service
+# DNS between regular Web Services isn't reliably resolvable.
+ENV AUTH_SERVICE_HOST=http://auth-service:4002
+ENV USER_SERVICE_HOST=http://user-service:4003
 ENV CORS_ORIGIN=http://localhost:5173
 
 EXPOSE 80
