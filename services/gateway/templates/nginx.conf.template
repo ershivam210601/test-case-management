@@ -29,9 +29,6 @@ server {
     }
 
     location /api/auth/ {
-        error_log /var/log/nginx/auth-api-error.log;
-        access_log /var/log/nginx/auth-api-access.log;
-
         add_header 'Access-Control-Allow-Origin' '${CORS_ORIGIN}' always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, PATCH, PUT, DELETE, OPTIONS' always;
         add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
@@ -52,9 +49,6 @@ server {
     }
 
     location /api/ {
-        error_log /var/log/nginx/user-api-error.log;
-        access_log /var/log/nginx/user-api-access.log;
-
         add_header 'Access-Control-Allow-Origin' '${CORS_ORIGIN}' always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, PATCH, PUT, DELETE, OPTIONS' always;
         add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
